@@ -17,7 +17,7 @@
 
   async function loadPatchedCore() {
     try {
-      const res = await fetch('./src/v26.js?v=30-core-closedmesh', { cache: 'no-store' });
+      const res = await fetch('./src/v26.js?v=30-core-selfpivot', { cache: 'no-store' });
       if (!res.ok) throw new Error('core fetch failed');
       let source = await res.text();
       const oldBody = "function bodyGeometry(L,W,H){const seg=34,rad=28,pos=[],idx=[];for(let i=0;i<=seg;i++){const t=i/seg,x=(t-.5)*2.55*L;const chest=Math.exp(-Math.pow((t-.34)/.2,2));const belly=Math.exp(-Math.pow((t-.62)/.18,2));const rump=Math.exp(-Math.pow((t-.8)/.18,2));const ry=(.38+.18*chest+.04*belly+.1*rump)*H;const rz=(.29+.16*chest-.04*belly+.08*rump)*W;const topline=.08*Math.sin((t-.1)*Math.PI);for(let j=0;j<rad;j++){const a=j/rad*Math.PI*2;const y=Math.sin(a)*ry+1.02+topline;const z=Math.cos(a)*rz;pos.push(x,y,z)}}for(let i=0;i<seg;i++)for(let j=0;j<rad;j++){const a=i*rad+j,b=i*rad+(j+1)%rad,c=(i+1)*rad+j,d=(i+1)*rad+(j+1)%rad;idx.push(a,c,b,b,c,d)}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();return geo}";
@@ -25,17 +25,17 @@
       const oldControls = "let drag=false,lastX=0,pinch=0;const dom=renderer.domElement;dom.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;dom.setPointerCapture?.(e.pointerId)});dom.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lastX;lastX=e.clientX;root.rotation.y+=dx*.01});dom.addEventListener('pointerup',()=>drag=false);dom.addEventListener('pointercancel',()=>drag=false);dom.addEventListener('touchstart',e=>{if(e.touches.length===2)pinch=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)},{passive:true});dom.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);camera.zoom=clamp(camera.zoom+(d-pinch)*.004,.75,2.6);pinch=d;camera.updateProjectionMatrix()}},{passive:true});";
       const newControls = "const dom=renderer.domElement;const pointers=new Map();let lastSingleX=0,lastMid=null,lastDist=0;function getPoints(){return Array.from(pointers.values())}function midpoint(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2}}function distance(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}function worldPerPixel(){const r=viewer.getBoundingClientRect();return{sx:(camera.right-camera.left)/Math.max(1,r.width)/camera.zoom,sy:(camera.top-camera.bottom)/Math.max(1,r.height)/camera.zoom}}function remember(e){pointers.set(e.pointerId,{x:e.clientX,y:e.clientY,type:e.pointerType})}function forget(e){pointers.delete(e.pointerId);const pts=getPoints();if(pts.length===1)lastSingleX=pts[0].x;if(pts.length<2){lastMid=null;lastDist=0}}dom.addEventListener('pointerdown',e=>{e.preventDefault();remember(e);dom.setPointerCapture?.(e.pointerId);const pts=getPoints();if(pts.length===1)lastSingleX=pts[0].x;if(pts.length>=2){lastMid=midpoint(pts[0],pts[1]);lastDist=distance(pts[0],pts[1])}}, {passive:false});dom.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;e.preventDefault();remember(e);const pts=getPoints();if(pts.length===1){const dx=pts[0].x-lastSingleX;lastSingleX=pts[0].x;root.rotation.y+=dx*.01;return}if(pts.length>=2){const mid=midpoint(pts[0],pts[1]),dist=distance(pts[0],pts[1]);if(lastMid){const w=worldPerPixel();root.position.x+=(mid.x-lastMid.x)*w.sx;root.position.y-=(mid.y-lastMid.y)*w.sy;root.position.x=clamp(root.position.x,-7.0,4.2);root.position.y=clamp(root.position.y,-3.0,5.2)}if(lastDist){camera.zoom=clamp(camera.zoom+(dist-lastDist)*.004,.45,2.8);camera.updateProjectionMatrix()}lastMid=mid;lastDist=dist}}, {passive:false});dom.addEventListener('pointerup',forget);dom.addEventListener('pointercancel',forget);dom.addEventListener('lostpointercapture',forget);dom.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault()}, {passive:false});dom.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()}, {passive:false});";
       const oldCenter = "function centerDog(){dog.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(dog),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());dog.position.x+=-.38-c.x;dog.position.y+=1.62-c.y;dog.position.z-=c.z;root.scale.setScalar(clamp(3.55/Math.max(s.x,s.y*1.18),.78,1.25))}";
-      const newCenter = "function centerDog(){dog.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(dog),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());const frames={toy:{x:-.38,y:1.62,fit:3.55,min:.78,max:1.25},hound:{x:-.82,y:1.78,fit:2.82,min:.62,max:1.0},french:{x:-.46,y:1.58,fit:3.22,min:.72,max:1.12},corgi:{x:-.88,y:1.66,fit:2.95,min:.64,max:1.05}};const f=frames[state.breed]||frames.toy;dog.position.x+=f.x-c.x;dog.position.y+=f.y-c.y;dog.position.z-=c.z;root.position.set(0,0,0);root.scale.setScalar(clamp(f.fit/Math.max(s.x,s.y*1.18),f.min,f.max))}";
+      const newCenter = "function centerDog(){dog.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(dog),c=box.getCenter(new THREE.Vector3()),s=box.getSize(new THREE.Vector3());const frames={toy:{x:-.38,y:1.62,fit:3.55,min:.78,max:1.25},hound:{x:-.82,y:1.78,fit:2.82,min:.62,max:1.0},french:{x:-.46,y:1.58,fit:3.22,min:.72,max:1.12},corgi:{x:-.88,y:1.66,fit:2.95,min:.64,max:1.05}};const f=frames[state.breed]||frames.toy;dog.position.x+=f.x-c.x;dog.position.y+=f.y-c.y;dog.position.z-=c.z;dog.updateMatrixWorld(true);const pivotBox=new THREE.Box3().setFromObject(dog),pivot=pivotBox.getCenter(new THREE.Vector3());dog.position.sub(pivot);root.position.copy(pivot);root.scale.setScalar(clamp(f.fit/Math.max(s.x,s.y*1.18),f.min,f.max))}";
       const oldLines = "function anatomyLines(b,L,W){add(new THREE.CapsuleGeometry(.018,1.1,6,10),lineMat,[.1,1.37,0],[1,1,1],[0,0,1.57]);add(new THREE.CapsuleGeometry(.016,.55,6,10),lineMat,[.58*L,1.22,.32*W],[1,1,1],[.25,0,.45]);add(new THREE.CapsuleGeometry(.016,.48,6,10),lineMat,[-.78*L,1.12,.3*W],[1,1,1],[-.2,0,-.35])}";
       source = source
         .replace('PetForm V26', 'PetForm V30')
-        .replace('程序化解剖白模', '封口拓扑白模')
-        .replace('单指旋转 · 双指缩放 · 程序生成白模', '封口网格 · 单指旋转 · 双指缩放/移动')
+        .replace('程序化解剖白模', '自身轴旋转白模')
+        .replace('单指旋转 · 双指缩放 · 程序生成白模', '绕自身中心旋转 · 双指缩放/移动')
         .replace(oldBody, newBody)
         .replace(oldLines, 'function anatomyLines(b,L,W){}')
         .replace(oldCenter, newCenter)
         .replace(oldControls, newControls)
-        .replace("reset.onclick=()=>{root.rotation.y=.35;camera.zoom=1;camera.updateProjectionMatrix()};", "reset.onclick=()=>{root.rotation.y=.35;root.position.set(0,0,0);camera.zoom=1;camera.updateProjectionMatrix()};");
+        .replace("reset.onclick=()=>{root.rotation.y=.35;camera.zoom=1;camera.updateProjectionMatrix()};", "reset.onclick=()=>{root.rotation.y=.35;root.position.set(0,0,0);camera.zoom=1;buildDog();camera.updateProjectionMatrix()};");
       const blob = new Blob([source], { type: 'text/javascript' });
       const script = document.createElement('script');
       script.src = URL.createObjectURL(blob);
@@ -43,7 +43,7 @@
       document.body.appendChild(script);
     } catch (error) {
       const app = document.querySelector('#app');
-      if (app) app.innerHTML = '<main class="pf26"><header class="topbar"><div class="brand"><span class="mark">P</span><div><strong>PetForm V30</strong><small>封口拓扑白模</small></div></div></header><section class="stage"><div class="loading">3D 核心加载失败，请刷新页面</div></section></main>';
+      if (app) app.innerHTML = '<main class="pf26"><header class="topbar"><div class="brand"><span class="mark">P</span><div><strong>PetForm V30</strong><small>自身轴旋转白模</small></div></div></header><section class="stage"><div class="loading">3D 核心加载失败，请刷新页面</div></section></main>';
     }
   }
 
@@ -57,7 +57,7 @@
       if (!main || !stage || main.dataset.fullscreenReady) return false;
       main.dataset.fullscreenReady = '1';
       if (brand) brand.textContent = 'PetForm V30';
-      if (sub) sub.textContent = '封口拓扑白模';
+      if (sub) sub.textContent = '自身轴旋转白模';
       if (hint) hint.textContent = '点窗口全屏 · 单指旋转 · 双指缩放/移动';
       const close = document.createElement('button');
       close.className = 'full-close'; close.type = 'button'; close.setAttribute('aria-label', '退出全屏'); close.textContent = '×'; main.appendChild(close);
