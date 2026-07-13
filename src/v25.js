@@ -55,7 +55,8 @@
         .replace('固定居中', '固定偏上')
         .replace("dog.position.y+=.92-c.y", "dog.position.y+=1.28-c.y")
         .replace("span=3.45", "span=3.18")
-        .replace("clamp(3.6/Math.max(s.x,s.y*1.25),.82,1.35)", "clamp(4.05/Math.max(s.x,s.y*1.22),.9,1.55)");
+        .replace("clamp(3.6/Math.max(s.x,s.y*1.25),.82,1.35)", "clamp(4.05/Math.max(s.x,s.y*1.22),.9,1.55)")
+        .replace("dog.add(b.label.includes('法斗')?mesh(sph,mats.white,[-1.42*L,1.02,0],[.12,.08,.08]):mesh(torus,mats.white,[-1.5*L,1.18,0],[.9,.9,.62],[0,1.55,0]))", "dog.add(b.label.includes('法斗')?mesh(sph,mats.white,[-1.42*L,1.02,0],[.12,.08,.08]):mesh(cyl,mats.white,[-1.42*L,1.2,0],[.07,.72,.07],[0,0,-1.08]));dog.add(b.label.includes('法斗')?new THREE.Group():mesh(sph,mats.white,[-1.76*L,1.55,0],[.095,.075,.075]))");
       const blob = new Blob([source], { type: 'text/javascript' });
       const script = document.createElement('script');
       script.src = URL.createObjectURL(blob);
